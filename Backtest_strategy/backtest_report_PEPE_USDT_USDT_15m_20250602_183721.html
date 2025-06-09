@@ -1,0 +1,822 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport de Backtest - PEPE/USDT:USDT 15m</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --dark-bg: #1a1a1a;
+            --light-bg: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,.15);
+        }
+        
+        .metric-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .positive {
+            color: var(--success-color);
+        }
+        
+        .negative {
+            color: var(--danger-color);
+        }
+        
+        .section-title {
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+        }
+        
+        .tooltip-custom {
+            cursor: help;
+            text-decoration: underline dotted;
+        }
+        
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .summary-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--info-color);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-container {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        
+        #navbar-content {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .trade-row-positive {
+            background-color: rgba(39, 174, 96, 0.1);
+        }
+        
+        .trade-row-negative {
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+        
+        .dark-mode {
+            background-color: var(--dark-bg);
+            color: #f8f9fa;
+        }
+        
+        .dark-mode .card {
+            background-color: #2c2c2c;
+            color: #f8f9fa;
+        }
+        
+        .dark-mode .table {
+            color: #f8f9fa;
+        }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark navbar-expand-lg" id="navbar-content">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line"></i> Rapport de Backtest
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#resume">Résumé</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#kpis">KPIs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#graphiques">Graphiques</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#trades">Trades</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#analyse">Analyse</a>
+                    </li>
+                </ul>
+                <div class="ms-auto">
+                    <button class="btn btn-outline-light no-print" onclick="window.print()">
+                        <i class="fas fa-print"></i> Imprimer
+                    </button>
+                    <button class="btn btn-outline-light no-print" onclick="exportToCSV()">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                    <button class="btn btn-outline-light no-print" onclick="toggleDarkMode()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Container principal -->
+    <div class="container-fluid mt-4">
+        <!-- En-tête -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="card-title">Stratégie de Trading - Détection de Triangles</h1>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <p><strong>Marché:</strong> PEPE/USDT:USDT</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Période:</strong> 2025-05-26 - 2025-06-02</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Timeframe:</strong> 15m</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Version:</strong> 1.0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Résumé exécutif -->
+        <section id="resume">
+            <h2 class="section-title">Résumé Exécutif</h2>
+            <div class="row">
+                <div class="col-12">
+                    <div class="summary-box">
+                        <h4>Performance Globale</h4>
+                        <p>La stratégie a généré un profit net de <strong>66.46 USDT</strong> 
+                        sur un capital initial de 100 USDT, soit un rendement de 
+                        <strong>66.46%</strong>.</p>
+                        <p>Avec un taux de réussite de <strong>47.6%</strong> sur 
+                        <strong>21</strong> trades, la stratégie montre une 
+                        performance positive 
+                        avec un drawdown maximum de <strong>14.47%</strong>.</p>
+                        <div class="mt-3">
+                            <h5>Points Forts:</h5>
+                            <ul>
+                                <li>Profit factor: 2.68</li>
+                                <li>Ratio gain/perte: 2.95</li>
+                                <li>Nombre de triangles détectés: 21</li>
+                            </ul>
+                            <h5>Points Faibles:</h5>
+                            <ul>
+                                <li>Drawdown maximum: -14.47%</li>
+                                <li>Volatilité: 24.75%</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Paramètres du backtest -->
+        <section id="parametres" class="mt-5">
+            <h2 class="section-title">Paramètres du Backtest</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Paramètres de Trading</h5>
+                            <ul>
+                                <li>Capital initial: 100 USDT</li>
+                                <li>Taille des positions: 30 USDT</li>
+                                <li>Effet de levier: 25x</li>
+                                <li>Stop loss: 0.5%</li>
+                                <li>Trailing stop: 2%</li>
+                                <li>Frais par trade: 0.5 USDT</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Paramètres d'Analyse</h5>
+                            <ul>
+                                <li>EMAs utilisées: 5 à 200 (par paliers de 5)</li>
+                                <li>Seuil triangles rouges: >0.2 ou >1.5</li>
+                                <li>Seuil triangles verts: <-0.2 ou <-1.5</li>
+                                <li>Fenêtre de détection: 3-4 barres</li>
+                                <li>Multiplicateur de pente: 50</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- KPIs -->
+        <section id="kpis" class="mt-5">
+            <h2 class="section-title">Indicateurs de Performance Clés</h2>
+            <div class="row">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-label">Profit Net Total</div>
+                        <div class="metric-value positive">
+                            66.46 USDT
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-label">Taux de Réussite</div>
+                        <div class="metric-value">47.6%</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-label">Profit Factor</div>
+                        <div class="metric-value">2.68</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-label">Drawdown Max</div>
+                        <div class="metric-value negative">-14.47%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-label">Sharpe Ratio</div>
+                        <div class="metric-value">0.90</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-label">Sortino Ratio</div>
+                        <div class="metric-value">0.69</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-label">Calmar Ratio</div>
+                        <div class="metric-value">1.45</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-label">Volatilité Annuelle</div>
+                        <div class="metric-value">24.8%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>Détails des Performances</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>Nombre total de trades</td>
+                                            <td><strong>21</strong></td>
+                                            <td>Gain moyen</td>
+                                            <td class="positive"><strong>10.59 USDT</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Trades gagnants</td>
+                                            <td class="positive"><strong>10</strong></td>
+                                            <td>Perte moyenne</td>
+                                            <td class="negative"><strong>-3.59 USDT</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Trades perdants</td>
+                                            <td class="negative"><strong>11</strong></td>
+                                            <td>Plus gros gain</td>
+                                            <td class="positive"><strong>17.08 USDT</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Durée moyenne des trades</td>
+                                            <td><strong>1.7 heures</strong></td>
+                                            <td>Plus grosse perte</td>
+                                            <td class="negative"><strong>-4.25 USDT</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Graphiques -->
+        <section id="graphiques" class="mt-5">
+            <h2 class="section-title">Graphiques Interactifs</h2>
+            
+            <!-- Courbe d'équité -->
+            <div class="chart-container">
+                <h4>Courbe d'Équité</h4>
+                <div id="equityCurve"></div>
+            </div>
+            
+            <!-- Drawdown -->
+            <div class="chart-container">
+                <h4>Drawdown dans le Temps</h4>
+                <div id="drawdownChart"></div>
+            </div>
+            
+            <!-- Distribution des profits/pertes -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4>Distribution des Profits/Pertes</h4>
+                        <div id="profitDistribution"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4>Répartition des Types de Trades</h4>
+                        <div id="tradeTypeDistribution"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Heatmap mensuelle -->
+            <div class="chart-container">
+                <h4>Performance Mensuelle</h4>
+                <div id="monthlyHeatmap"></div>
+            </div>
+        </section>
+        
+        <!-- Analyse détaillée des trades -->
+        <section id="trades" class="mt-5">
+            <h2 class="section-title">Analyse Détaillée des Trades</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="tradesTable" class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Direction</th>
+                                    <th>Date Entrée</th>
+                                    <th>Date Sortie</th>
+                                    <th>Prix Entrée</th>
+                                    <th>Prix Sortie</th>
+                                    <th>Profit (USDT)</th>
+                                    <th>Profit (%)</th>
+                                    <th>Durée (h)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistiques par type de trade -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>Performance par Direction</h5>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Direction</th>
+                                        <th>Nombre</th>
+                                        <th>Gagnants</th>
+                                        <th>Perdants</th>
+                                        <th>Profit Total</th>
+                                        <th>Win Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Long</td>
+                                        <td>10</td>
+                                        <td class="positive">4</td>
+                                        <td class="negative">6</td>
+                                        <td class="positive">16.32</td>
+                                        <td>40.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Short</td>
+                                        <td>11</td>
+                                        <td class="positive">6</td>
+                                        <td class="negative">5</td>
+                                        <td class="positive">50.14</td>
+                                        <td>54.5%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>Répartition des Sorties</h5>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Type de Sortie</th>
+                                        <th>Nombre</th>
+                                        <th>Pourcentage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Signal Opposé (Long)</td>
+                                        <td>2</td>
+                                        <td>9.5%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Signal Opposé (Short)</td>
+                                        <td>5</td>
+                                        <td>23.8%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Stop Loss</td>
+                                        <td>7</td>
+                                        <td>33.3%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Trailing Stop</td>
+                                        <td>7</td>
+                                        <td>33.3%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Analyse et Conclusions -->
+        <section id="analyse" class="mt-5">
+            <h2 class="section-title">Analyse et Conclusions</h2>
+            
+            <!-- Alertes et anomalies -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Alertes et Anomalies</h4>
+                    <div class="alert alert-info">
+                        <h5>Trades Outliers Détectés</h5>
+                        <ul>
+                            <li>Plus gros gain: 17.08 USDT (1.6x le gain moyen)</li>
+                            <li>Plus grosse perte: -4.25 USDT (1.2x la perte moyenne)</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-warning">
+                        <h5>Points d'Attention</h5>
+                        <ul>
+                            <li>Drawdown maximum atteint: -14.47%</li>
+                            <li>Ratio de Sharpe faible: 0.90</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Benchmark -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Benchmark</h4>
+                    <p>Comparaison avec une stratégie Buy & Hold:</p>
+                    <ul>
+                        <li>Prix initial: 0.000013638 USDT</li>
+                        <li>Prix final: 0.000011732 USDT</li>
+                        <li>Performance Buy & Hold: -13.98%</li>
+                        <li>Performance de la stratégie: 66.46%</li>
+                        <li>Alpha généré: 80.44%</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Conclusions et recommandations -->
+            <div class="card">
+                <div class="card-body">
+                    <h4>Conclusions et Axes d'Amélioration</h4>
+                    <h5>Synthèse des Résultats</h5>
+                    <p>La stratégie de détection de triangles a généré un profit de 
+                    66.46 USDT sur la période testée, avec un taux de réussite de 47.6%.</p>
+                    
+                    <h5>Points Forts</h5>
+                    <ul>
+                        <li>Profit factor supérieur à 1.5, indiquant une bonne rentabilité</li>
+                        <li>Ratio gain/perte favorable</li>
+                        
+                        <li>Système de trailing stop efficace pour protéger les gains</li>
+                    </ul>
+                    
+                    <h5>Limites Identifiées</h5>
+                    <ul>
+                        
+                        <li>Sharpe ratio faible indiquant un rendement ajusté au risque insuffisant</li>
+                        <li>Nombre de trades relativement faible pour une validation statistique robuste</li>
+                        <li>Dépendance aux conditions de marché spécifiques</li>
+                    </ul>
+                    
+                    <h5>Recommandations d'Amélioration</h5>
+                    <ol>
+                        <li><strong>Optimisation des paramètres:</strong> Tester différentes valeurs de seuils pour la détection des triangles</li>
+                        <li><strong>Gestion du risque:</strong> Implémenter une taille de position dynamique basée sur la volatilité</li>
+                        <li><strong>Filtres additionnels:</strong> Ajouter des conditions de volume ou de momentum</li>
+                        <li><strong>Diversification:</strong> Tester sur d'autres paires et timeframes</li>
+                        <li><strong>Machine Learning:</strong> Explorer l'utilisation d'algorithmes d'apprentissage pour améliorer la détection</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="mt-5 py-4 bg-dark text-white text-center">
+        <p>Rapport généré le 2025-06-02 18:37:21 | © 2024 Backtest Trading System</p>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+        // Données pour les graphiques
+        const equityData = [{"x": "2025-05-26 16:45:00", "y": 100.0}, {"x": "2025-05-26 17:00:00", "y": 100.0}, {"x": "2025-05-26 17:15:00", "y": 100.0}, {"x": "2025-05-26 17:30:00", "y": 100.0}, {"x": "2025-05-26 17:45:00", "y": 100.0}, {"x": "2025-05-26 18:00:00", "y": 100.0}, {"x": "2025-05-26 18:15:00", "y": 100.0}, {"x": "2025-05-26 18:30:00", "y": 100.0}, {"x": "2025-05-26 18:45:00", "y": 102.42228281473267}, {"x": "2025-05-26 19:00:00", "y": 100.40462512029391}, {"x": "2025-05-26 19:15:00", "y": 96.61536554781136}, {"x": "2025-05-26 19:30:00", "y": 95.75000000000007}, {"x": "2025-05-26 19:45:00", "y": 95.75000000000007}, {"x": "2025-05-26 20:00:00", "y": 95.75000000000007}, {"x": "2025-05-26 20:15:00", "y": 95.75000000000007}, {"x": "2025-05-26 20:30:00", "y": 95.75000000000007}, {"x": "2025-05-26 20:45:00", "y": 95.75000000000007}, {"x": "2025-05-26 21:00:00", "y": 95.75000000000007}, {"x": "2025-05-26 21:15:00", "y": 95.75000000000007}, {"x": "2025-05-26 21:30:00", "y": 95.75000000000007}, {"x": "2025-05-26 21:45:00", "y": 95.75000000000007}, {"x": "2025-05-26 22:00:00", "y": 95.75000000000007}, {"x": "2025-05-26 22:15:00", "y": 95.75000000000007}, {"x": "2025-05-26 22:30:00", "y": 95.75000000000007}, {"x": "2025-05-26 22:45:00", "y": 95.75000000000007}, {"x": "2025-05-26 23:00:00", "y": 95.75000000000007}, {"x": "2025-05-26 23:15:00", "y": 95.75000000000007}, {"x": "2025-05-26 23:30:00", "y": 98.59243835018552}, {"x": "2025-05-26 23:45:00", "y": 101.19482432530734}, {"x": "2025-05-27 00:00:00", "y": 104.50645595402638}, {"x": "2025-05-27 00:15:00", "y": 102.22595839092169}, {"x": "2025-05-27 00:30:00", "y": 97.82317960282244}, {"x": "2025-05-27 00:45:00", "y": 94.16238088310178}, {"x": "2025-05-27 01:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 01:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 01:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 01:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 02:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 02:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 02:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 02:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 03:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 03:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 03:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 03:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 04:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 04:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 04:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 04:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 05:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 05:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 05:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 05:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 06:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 06:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 06:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 06:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 07:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 07:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 07:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 07:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 08:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 08:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 08:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 08:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 09:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 09:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 09:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 09:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 10:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 10:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 10:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 10:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 11:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 11:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 11:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 11:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 12:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 12:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 12:30:00", "y": 92.68089401323927}, {"x": "2025-05-27 12:45:00", "y": 92.68089401323927}, {"x": "2025-05-27 13:00:00", "y": 92.68089401323927}, {"x": "2025-05-27 13:15:00", "y": 92.68089401323927}, {"x": "2025-05-27 13:30:00", "y": 99.43779321843405}, {"x": "2025-05-27 13:45:00", "y": 106.08928057955389}, {"x": "2025-05-27 14:00:00", "y": 103.18518427529311}, {"x": "2025-05-27 14:15:00", "y": 107.59666994982354}, {"x": "2025-05-27 14:30:00", "y": 107.97615258849284}, {"x": "2025-05-27 14:45:00", "y": 108.59808246853419}, {"x": "2025-05-27 15:00:00", "y": 105.65182142664348}, {"x": "2025-05-27 15:15:00", "y": 106.8271634880775}, {"x": "2025-05-27 15:30:00", "y": 106.67431631416906}, {"x": "2025-05-27 15:45:00", "y": 103.94942014483549}, {"x": "2025-05-27 16:00:00", "y": 102.64702518773801}, {"x": "2025-05-27 16:15:00", "y": 109.93514488531984}, {"x": "2025-05-27 16:30:00", "y": 120.58867694511092}, {"x": "2025-05-27 16:45:00", "y": 114.59910864130758}, {"x": "2025-05-27 17:00:00", "y": 117.78597018687232}, {"x": "2025-05-27 17:15:00", "y": 121.38563500082286}, {"x": "2025-05-27 17:30:00", "y": 119.72031190692827}, {"x": "2025-05-27 17:45:00", "y": 119.51347241437458}, {"x": "2025-05-27 18:00:00", "y": 113.0359701868724}, {"x": "2025-05-27 18:15:00", "y": 113.0359701868724}, {"x": "2025-05-27 18:30:00", "y": 113.0359701868724}, {"x": "2025-05-27 18:45:00", "y": 113.0359701868724}, {"x": "2025-05-27 19:00:00", "y": 113.0359701868724}, {"x": "2025-05-27 19:15:00", "y": 113.0359701868724}, {"x": "2025-05-27 19:30:00", "y": 113.0359701868724}, {"x": "2025-05-27 19:45:00", "y": 113.0359701868724}, {"x": "2025-05-27 20:00:00", "y": 114.90274938480107}, {"x": "2025-05-27 20:15:00", "y": 115.51428050136397}, {"x": "2025-05-27 20:30:00", "y": 113.3471000531939}, {"x": "2025-05-27 20:45:00", "y": 114.11956041095745}, {"x": "2025-05-27 21:00:00", "y": 116.79635012292992}, {"x": "2025-05-27 21:15:00", "y": 108.46557973677126}, {"x": "2025-05-27 21:30:00", "y": 108.78597018687239}, {"x": "2025-05-27 21:45:00", "y": 108.78597018687239}, {"x": "2025-05-27 22:00:00", "y": 108.78597018687239}, {"x": "2025-05-27 22:15:00", "y": 108.78597018687239}, {"x": "2025-05-27 22:30:00", "y": 108.78597018687239}, {"x": "2025-05-27 22:45:00", "y": 108.78597018687239}, {"x": "2025-05-27 23:00:00", "y": 108.78597018687239}, {"x": "2025-05-27 23:15:00", "y": 112.30299430977408}, {"x": "2025-05-27 23:30:00", "y": 109.74074514048219}, {"x": "2025-05-27 23:45:00", "y": 109.14198796618457}, {"x": "2025-05-28 00:00:00", "y": 115.0378581599445}, {"x": "2025-05-28 00:15:00", "y": 120.97284825995975}, {"x": "2025-05-28 00:30:00", "y": 121.9574071848141}, {"x": "2025-05-28 00:45:00", "y": 129.01250622092545}, {"x": "2025-05-28 01:00:00", "y": 125.84124736352155}, {"x": "2025-05-28 01:15:00", "y": 124.26921681499708}, {"x": "2025-05-28 01:30:00", "y": 124.08971159665344}, {"x": "2025-05-28 01:45:00", "y": 116.44714093687205}, {"x": "2025-05-28 02:00:00", "y": 116.25088552451774}, {"x": "2025-05-28 02:15:00", "y": 116.25088552451774}, {"x": "2025-05-28 02:30:00", "y": 116.25088552451774}, {"x": "2025-05-28 02:45:00", "y": 116.25088552451774}, {"x": "2025-05-28 03:00:00", "y": 116.25088552451774}, {"x": "2025-05-28 03:15:00", "y": 116.25088552451774}, {"x": "2025-05-28 03:30:00", "y": 116.25088552451774}, {"x": "2025-05-28 03:45:00", "y": 116.25088552451774}, {"x": "2025-05-28 04:00:00", "y": 116.25088552451774}, {"x": "2025-05-28 04:15:00", "y": 116.25088552451774}, {"x": "2025-05-28 04:30:00", "y": 116.25088552451774}, {"x": "2025-05-28 04:45:00", "y": 116.25088552451774}, {"x": "2025-05-28 05:00:00", "y": 116.25088552451774}, {"x": "2025-05-28 05:15:00", "y": 116.25088552451774}, {"x": "2025-05-28 05:30:00", "y": 116.25088552451774}, {"x": "2025-05-28 05:45:00", "y": 117.36710139096007}, {"x": "2025-05-28 06:00:00", "y": 122.52757764306307}, {"x": "2025-05-28 06:15:00", "y": 121.64323270539859}, {"x": "2025-05-28 06:30:00", "y": 126.0973114768062}, {"x": "2025-05-28 06:45:00", "y": 126.81449365186337}, {"x": "2025-05-28 07:00:00", "y": 124.73843998722424}, {"x": "2025-05-28 07:15:00", "y": 125.42326807919606}, {"x": "2025-05-28 07:30:00", "y": 127.88756549157726}, {"x": "2025-05-28 07:45:00", "y": 124.28455206216363}, {"x": "2025-05-28 08:00:00", "y": 121.17831775710843}, {"x": "2025-05-28 08:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 08:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 08:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 09:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 09:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 09:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 09:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 10:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 10:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 10:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 10:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 11:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 11:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 11:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 11:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 12:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 12:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 12:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 12:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 13:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 13:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 13:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 13:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 14:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 14:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 14:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 14:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 15:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 15:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 15:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 15:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 16:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 16:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 16:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 16:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 17:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 17:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 17:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 17:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 18:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 18:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 18:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 18:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 19:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 19:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 19:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 19:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 20:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 20:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 20:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 20:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 21:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 21:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 21:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 21:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 22:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 22:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 22:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 22:45:00", "y": 120.6732680791961}, {"x": "2025-05-28 23:00:00", "y": 120.6732680791961}, {"x": "2025-05-28 23:15:00", "y": 120.6732680791961}, {"x": "2025-05-28 23:30:00", "y": 120.6732680791961}, {"x": "2025-05-28 23:45:00", "y": 120.6732680791961}, {"x": "2025-05-29 00:00:00", "y": 120.6732680791961}, {"x": "2025-05-29 00:15:00", "y": 120.6732680791961}, {"x": "2025-05-29 00:30:00", "y": 120.6732680791961}, {"x": "2025-05-29 00:45:00", "y": 120.6732680791961}, {"x": "2025-05-29 01:00:00", "y": 120.6732680791961}, {"x": "2025-05-29 01:15:00", "y": 120.6732680791961}, {"x": "2025-05-29 01:30:00", "y": 120.6732680791961}, {"x": "2025-05-29 01:45:00", "y": 120.6732680791961}, {"x": "2025-05-29 02:00:00", "y": 120.6732680791961}, {"x": "2025-05-29 02:15:00", "y": 120.6732680791961}, {"x": "2025-05-29 02:30:00", "y": 120.6732680791961}, {"x": "2025-05-29 02:45:00", "y": 120.6732680791961}, {"x": "2025-05-29 03:00:00", "y": 120.6732680791961}, {"x": "2025-05-29 03:15:00", "y": 120.6732680791961}, {"x": "2025-05-29 03:30:00", "y": 131.14815649449233}, {"x": "2025-05-29 03:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 04:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 04:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 04:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 04:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 05:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 05:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 05:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 05:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 06:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 06:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 06:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 06:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 07:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 07:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 07:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 07:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 08:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 08:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 08:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 08:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 09:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 09:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 09:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 09:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 10:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 10:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 10:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 10:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 11:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 11:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 11:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 11:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 12:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 12:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 12:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 12:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 13:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 13:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 13:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 13:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 14:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 14:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 14:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 14:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 15:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 15:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 15:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 15:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 16:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 16:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 16:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 16:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 17:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 17:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 17:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 17:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 18:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 18:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 18:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 18:45:00", "y": 119.63615359932157}, {"x": "2025-05-29 19:00:00", "y": 119.63615359932157}, {"x": "2025-05-29 19:15:00", "y": 119.63615359932157}, {"x": "2025-05-29 19:30:00", "y": 119.63615359932157}, {"x": "2025-05-29 19:45:00", "y": 123.39979196675851}, {"x": "2025-05-29 20:00:00", "y": 125.41110676048397}, {"x": "2025-05-29 20:15:00", "y": 126.34788351372596}, {"x": "2025-05-29 20:30:00", "y": 122.18198218754388}, {"x": "2025-05-29 20:45:00", "y": 126.1274654541396}, {"x": "2025-05-29 21:00:00", "y": 129.3951631875072}, {"x": "2025-05-29 21:15:00", "y": 127.58773509889909}, {"x": "2025-05-29 21:30:00", "y": 131.04829863440477}, {"x": "2025-05-29 21:45:00", "y": 132.8336849170542}, {"x": "2025-05-29 22:00:00", "y": 130.4421489705423}, {"x": "2025-05-29 22:15:00", "y": 128.45287598277554}, {"x": "2025-05-29 22:30:00", "y": 127.32323342739554}, {"x": "2025-05-29 22:45:00", "y": 124.6286226489524}, {"x": "2025-05-29 23:00:00", "y": 125.0970110255734}, {"x": "2025-05-29 23:15:00", "y": 118.20343621201035}, {"x": "2025-05-29 23:30:00", "y": 117.85816968983994}, {"x": "2025-05-29 23:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 00:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 00:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 00:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 00:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 01:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 01:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 01:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 01:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 02:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 02:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 02:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 02:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 03:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 03:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 03:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 03:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 04:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 04:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 04:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 04:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 05:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 05:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 05:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 05:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 06:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 06:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 06:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 06:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 07:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 07:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 07:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 07:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 08:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 08:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 08:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 08:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 09:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 09:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 09:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 09:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 10:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 10:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 10:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 10:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 11:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 11:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 11:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 11:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 12:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 12:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 12:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 12:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 13:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 13:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 13:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 13:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 14:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 14:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 14:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 14:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 15:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 15:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 15:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 15:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 16:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 16:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 16:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 16:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 17:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 17:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 17:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 17:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 18:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 18:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 18:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 18:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 19:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 19:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 19:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 19:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 20:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 20:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 20:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 20:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 21:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 21:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 21:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 21:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 22:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 22:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 22:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 22:45:00", "y": 117.85816968983994}, {"x": "2025-05-30 23:00:00", "y": 117.85816968983994}, {"x": "2025-05-30 23:15:00", "y": 117.85816968983994}, {"x": "2025-05-30 23:30:00", "y": 117.85816968983994}, {"x": "2025-05-30 23:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 00:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 00:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 00:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 00:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 01:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 01:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 01:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 01:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 02:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 02:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 02:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 02:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 03:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 03:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 03:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 03:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 04:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 04:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 04:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 04:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 05:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 05:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 05:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 05:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 06:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 06:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 06:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 06:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 07:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 07:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 07:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 07:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 08:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 08:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 08:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 08:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 09:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 09:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 09:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 09:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 10:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 10:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 10:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 10:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 11:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 11:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 11:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 11:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 12:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 12:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 12:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 12:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 13:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 13:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 13:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 13:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 14:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 14:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 14:30:00", "y": 117.85816968983994}, {"x": "2025-05-31 14:45:00", "y": 117.85816968983994}, {"x": "2025-05-31 15:00:00", "y": 117.85816968983994}, {"x": "2025-05-31 15:15:00", "y": 117.85816968983994}, {"x": "2025-05-31 15:30:00", "y": 126.72972636250724}, {"x": "2025-05-31 15:45:00", "y": 113.60816968983997}, {"x": "2025-05-31 16:00:00", "y": 113.60816968983997}, {"x": "2025-05-31 16:15:00", "y": 113.60816968983997}, {"x": "2025-05-31 16:30:00", "y": 113.60816968983997}, {"x": "2025-05-31 16:45:00", "y": 113.60816968983997}, {"x": "2025-05-31 17:00:00", "y": 113.60816968983997}, {"x": "2025-05-31 17:15:00", "y": 113.60816968983997}, {"x": "2025-05-31 17:30:00", "y": 113.60816968983997}, {"x": "2025-05-31 17:45:00", "y": 113.60816968983997}, {"x": "2025-05-31 18:00:00", "y": 113.60816968983997}, {"x": "2025-05-31 18:15:00", "y": 113.60816968983997}, {"x": "2025-05-31 18:30:00", "y": 113.60816968983997}, {"x": "2025-05-31 18:45:00", "y": 113.60816968983997}, {"x": "2025-05-31 19:00:00", "y": 113.60816968983997}, {"x": "2025-05-31 19:15:00", "y": 113.60816968983997}, {"x": "2025-05-31 19:30:00", "y": 113.60816968983997}, {"x": "2025-05-31 19:45:00", "y": 113.60816968983997}, {"x": "2025-05-31 20:00:00", "y": 113.60816968983997}, {"x": "2025-05-31 20:15:00", "y": 113.60816968983997}, {"x": "2025-05-31 20:30:00", "y": 113.60816968983997}, {"x": "2025-05-31 20:45:00", "y": 113.60816968983997}, {"x": "2025-05-31 21:00:00", "y": 113.60816968983997}, {"x": "2025-05-31 21:15:00", "y": 113.60816968983997}, {"x": "2025-05-31 21:30:00", "y": 113.60816968983997}, {"x": "2025-05-31 21:45:00", "y": 113.60816968983997}, {"x": "2025-05-31 22:00:00", "y": 113.60816968983997}, {"x": "2025-05-31 22:15:00", "y": 113.60816968983997}, {"x": "2025-05-31 22:30:00", "y": 113.60816968983997}, {"x": "2025-05-31 22:45:00", "y": 113.60816968983997}, {"x": "2025-05-31 23:00:00", "y": 113.60816968983997}, {"x": "2025-05-31 23:15:00", "y": 113.60816968983997}, {"x": "2025-05-31 23:30:00", "y": 113.60816968983997}, {"x": "2025-05-31 23:45:00", "y": 113.60816968983997}, {"x": "2025-06-01 00:00:00", "y": 113.60816968983997}, {"x": "2025-06-01 00:15:00", "y": 113.60816968983997}, {"x": "2025-06-01 00:30:00", "y": 113.60816968983997}, {"x": "2025-06-01 00:45:00", "y": 113.60816968983997}, {"x": "2025-06-01 01:00:00", "y": 113.60816968983997}, {"x": "2025-06-01 01:15:00", "y": 113.60816968983997}, {"x": "2025-06-01 01:30:00", "y": 113.60816968983997}, {"x": "2025-06-01 01:45:00", "y": 113.60816968983997}, {"x": "2025-06-01 02:00:00", "y": 113.60816968983997}, {"x": "2025-06-01 02:15:00", "y": 121.00514969351222}, {"x": "2025-06-01 02:30:00", "y": 123.26096629037687}, {"x": "2025-06-01 02:45:00", "y": 122.04780910892354}, {"x": "2025-06-01 03:00:00", "y": 117.4050237874696}, {"x": "2025-06-01 03:15:00", "y": 117.96242033029952}, {"x": "2025-06-01 03:30:00", "y": 120.44775315068232}, {"x": "2025-06-01 03:45:00", "y": 121.75271682154302}, {"x": "2025-06-01 04:00:00", "y": 120.99859208712608}, {"x": "2025-06-01 04:15:00", "y": 124.64462123787234}, {"x": "2025-06-01 04:30:00", "y": 130.8874625175673}, {"x": "2025-06-01 04:45:00", "y": 131.2481308688102}, {"x": "2025-06-01 05:00:00", "y": 133.5957539550821}, {"x": "2025-06-01 05:15:00", "y": 130.67106150682164}, {"x": "2025-06-01 05:30:00", "y": 130.0021856554257}, {"x": "2025-06-01 05:45:00", "y": 128.4283601227295}, {"x": "2025-06-01 06:00:00", "y": 125.47743724892403}, {"x": "2025-06-01 06:15:00", "y": 124.35608655687795}, {"x": "2025-06-01 06:30:00", "y": 124.49379629098895}, {"x": "2025-06-01 06:45:00", "y": 122.39536224739395}, {"x": "2025-06-01 07:00:00", "y": 120.9592464488086}, {"x": "2025-06-01 07:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 07:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 07:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 08:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 08:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 08:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 08:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 09:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 09:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 09:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 09:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 10:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 10:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 10:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 10:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 11:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 11:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 11:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 11:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 12:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 12:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 12:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 12:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 13:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 13:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 13:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 13:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 14:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 14:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 14:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 14:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 15:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 15:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 15:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 15:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 16:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 16:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 16:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 16:45:00", "y": 119.86814380915348}, {"x": "2025-06-01 17:00:00", "y": 119.86814380915348}, {"x": "2025-06-01 17:15:00", "y": 119.86814380915348}, {"x": "2025-06-01 17:30:00", "y": 119.86814380915348}, {"x": "2025-06-01 17:45:00", "y": 122.13478257014131}, {"x": "2025-06-01 18:00:00", "y": 126.95688386775542}, {"x": "2025-06-01 18:15:00", "y": 133.67517604021245}, {"x": "2025-06-01 18:30:00", "y": 143.0117185266085}, {"x": "2025-06-01 18:45:00", "y": 134.56048370032133}, {"x": "2025-06-01 19:00:00", "y": 135.5650881373242}, {"x": "2025-06-01 19:15:00", "y": 139.30407915912835}, {"x": "2025-06-01 19:30:00", "y": 138.09202272475474}, {"x": "2025-06-01 19:45:00", "y": 140.00950882992785}, {"x": "2025-06-01 20:00:00", "y": 136.86072729935918}, {"x": "2025-06-01 20:15:00", "y": 139.40668711124465}, {"x": "2025-06-01 20:30:00", "y": 145.11425444771325}, {"x": "2025-06-01 20:45:00", "y": 139.30407915912835}, {"x": "2025-06-01 21:00:00", "y": 140.7085255037201}, {"x": "2025-06-01 21:15:00", "y": 143.69056911209975}, {"x": "2025-06-01 21:30:00", "y": 142.6644895909368}, {"x": "2025-06-01 21:45:00", "y": 147.3139124212061}, {"x": "2025-06-01 22:00:00", "y": 151.12323264352335}, {"x": "2025-06-01 22:15:00", "y": 156.43718613189543}, {"x": "2025-06-01 22:30:00", "y": 156.74483593851548}, {"x": "2025-06-01 22:45:00", "y": 157.33502128182758}, {"x": "2025-06-01 23:00:00", "y": 153.56160222511957}, {"x": "2025-06-01 23:15:00", "y": 157.28479274197122}, {"x": "2025-06-01 23:30:00", "y": 158.52794910341586}, {"x": "2025-06-01 23:45:00", "y": 159.70831979003992}, {"x": "2025-06-02 00:00:00", "y": 161.2026188507662}, {"x": "2025-06-02 00:15:00", "y": 164.25400264703936}, {"x": "2025-06-02 00:30:00", "y": 161.00798325882286}, {"x": "2025-06-02 00:45:00", "y": 162.18835394544703}, {"x": "2025-06-02 01:00:00", "y": 168.2055460686998}, {"x": "2025-06-02 01:15:00", "y": 162.24952117328098}, {"x": "2025-06-02 01:30:00", "y": 159.086578616399}, {"x": "2025-06-02 01:45:00", "y": 157.25640822562252}, {"x": "2025-06-02 02:00:00", "y": 157.43835394544703}, {"x": "2025-06-02 02:15:00", "y": 157.43835394544703}, {"x": "2025-06-02 02:30:00", "y": 157.43835394544703}, {"x": "2025-06-02 02:45:00", "y": 157.43835394544703}, {"x": "2025-06-02 03:00:00", "y": 157.43835394544703}, {"x": "2025-06-02 03:15:00", "y": 157.43835394544703}, {"x": "2025-06-02 03:30:00", "y": 157.43835394544703}, {"x": "2025-06-02 03:45:00", "y": 157.43835394544703}, {"x": "2025-06-02 04:00:00", "y": 157.43835394544703}, {"x": "2025-06-02 04:15:00", "y": 157.43835394544703}, {"x": "2025-06-02 04:30:00", "y": 157.43835394544703}, {"x": "2025-06-02 04:45:00", "y": 157.43835394544703}, {"x": "2025-06-02 05:00:00", "y": 157.43835394544703}, {"x": "2025-06-02 05:15:00", "y": 157.43835394544703}, {"x": "2025-06-02 05:30:00", "y": 157.43835394544703}, {"x": "2025-06-02 05:45:00", "y": 157.43835394544703}, {"x": "2025-06-02 06:00:00", "y": 157.43835394544703}, {"x": "2025-06-02 06:15:00", "y": 157.43835394544703}, {"x": "2025-06-02 06:30:00", "y": 157.43835394544703}, {"x": "2025-06-02 06:45:00", "y": 157.43835394544703}, {"x": "2025-06-02 07:00:00", "y": 157.43835394544703}, {"x": "2025-06-02 07:15:00", "y": 157.43835394544703}, {"x": "2025-06-02 07:30:00", "y": 157.43835394544703}, {"x": "2025-06-02 07:45:00", "y": 157.43835394544703}, {"x": "2025-06-02 08:00:00", "y": 157.43835394544703}, {"x": "2025-06-02 08:15:00", "y": 157.43835394544703}, {"x": "2025-06-02 08:30:00", "y": 164.85523374084346}, {"x": "2025-06-02 08:45:00", "y": 167.34883987895083}, {"x": "2025-06-02 09:00:00", "y": 172.7580470400762}, {"x": "2025-06-02 09:15:00", "y": 172.23375036488432}, {"x": "2025-06-02 09:30:00", "y": 173.34628233419383}, {"x": "2025-06-02 09:45:00", "y": 175.0214741500506}, {"x": "2025-06-02 10:00:00", "y": 178.9278469130362}, {"x": "2025-06-02 10:15:00", "y": 174.19410618846183}, {"x": "2025-06-02 10:30:00", "y": 174.80301059701705}, {"x": "2025-06-02 10:45:00", "y": 177.12077576506593}, {"x": "2025-06-02 11:00:00", "y": 177.73622753285295}, {"x": "2025-06-02 11:15:00", "y": 174.82265267471232}, {"x": "2025-06-02 11:30:00", "y": 173.20545494446353}, {"x": "2025-06-02 11:45:00", "y": 177.7558696105482}, {"x": "2025-06-02 12:00:00", "y": 170.2714741500506}, {"x": "2025-06-02 12:15:00", "y": 170.2714741500506}, {"x": "2025-06-02 12:30:00", "y": 170.2714741500506}, {"x": "2025-06-02 12:45:00", "y": 170.2714741500506}, {"x": "2025-06-02 13:00:00", "y": 170.2714741500506}, {"x": "2025-06-02 13:15:00", "y": 170.2714741500506}, {"x": "2025-06-02 13:30:00", "y": 170.2714741500506}, {"x": "2025-06-02 13:45:00", "y": 176.25927986472828}, {"x": "2025-06-02 14:00:00", "y": 175.770479398224}, {"x": "2025-06-02 14:15:00", "y": 168.47706191117294}, {"x": "2025-06-02 14:30:00", "y": 166.4617804650096}, {"x": "2025-06-02 14:45:00", "y": 166.4617804650096}, {"x": "2025-06-02 15:00:00", "y": 166.4617804650096}, {"x": "2025-06-02 15:15:00", "y": 166.4617804650096}, {"x": "2025-06-02 15:30:00", "y": 166.4617804650096}, {"x": "2025-06-02 15:45:00", "y": 166.4617804650096}, {"x": "2025-06-02 16:00:00", "y": 166.4617804650096}, {"x": "2025-06-02 16:15:00", "y": 166.4617804650096}, {"x": "2025-06-02 16:30:00", "y": 166.4617804650096}];
+        const drawdownData = [{"x": "2025-05-26 16:45:00", "y": 0.0}, {"x": "2025-05-26 17:00:00", "y": 0.0}, {"x": "2025-05-26 17:15:00", "y": 0.0}, {"x": "2025-05-26 17:30:00", "y": 0.0}, {"x": "2025-05-26 17:45:00", "y": 0.0}, {"x": "2025-05-26 18:00:00", "y": 0.0}, {"x": "2025-05-26 18:15:00", "y": 0.0}, {"x": "2025-05-26 18:30:00", "y": 0.0}, {"x": "2025-05-26 18:45:00", "y": 0.0}, {"x": "2025-05-26 19:00:00", "y": -1.9699401721873442}, {"x": "2025-05-26 19:15:00", "y": -5.669583910197735}, {"x": "2025-05-26 19:30:00", "y": -6.514483598068018}, {"x": "2025-05-26 19:45:00", "y": -6.514483598068018}, {"x": "2025-05-26 20:00:00", "y": -6.514483598068018}, {"x": "2025-05-26 20:15:00", "y": -6.514483598068018}, {"x": "2025-05-26 20:30:00", "y": -6.514483598068018}, {"x": "2025-05-26 20:45:00", "y": -6.514483598068018}, {"x": "2025-05-26 21:00:00", "y": -6.514483598068018}, {"x": "2025-05-26 21:15:00", "y": -6.514483598068018}, {"x": "2025-05-26 21:30:00", "y": -6.514483598068018}, {"x": "2025-05-26 21:45:00", "y": -6.514483598068018}, {"x": "2025-05-26 22:00:00", "y": -6.514483598068018}, {"x": "2025-05-26 22:15:00", "y": -6.514483598068018}, {"x": "2025-05-26 22:30:00", "y": -6.514483598068018}, {"x": "2025-05-26 22:45:00", "y": -6.514483598068018}, {"x": "2025-05-26 23:00:00", "y": -6.514483598068018}, {"x": "2025-05-26 23:15:00", "y": -6.514483598068018}, {"x": "2025-05-26 23:30:00", "y": -3.739268799031549}, {"x": "2025-05-26 23:45:00", "y": -1.198429146170886}, {"x": "2025-05-27 00:00:00", "y": 0.0}, {"x": "2025-05-27 00:15:00", "y": -2.182159506115016}, {"x": "2025-05-27 00:30:00", "y": -6.39508467701172}, {"x": "2025-05-27 00:45:00", "y": -9.898024936827907}, {"x": "2025-05-27 01:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 01:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 01:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 01:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 02:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 02:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 02:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 02:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 03:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 03:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 03:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 03:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 04:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 04:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 04:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 04:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 05:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 05:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 05:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 05:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 06:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 06:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 06:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 06:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 07:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 07:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 07:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 07:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 08:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 08:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 08:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 08:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 09:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 09:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 09:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 09:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 10:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 10:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 10:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 10:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 11:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 11:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 11:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 11:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 12:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 12:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 12:30:00", "y": -11.315628142618591}, {"x": "2025-05-27 12:45:00", "y": -11.315628142618591}, {"x": "2025-05-27 13:00:00", "y": -11.315628142618591}, {"x": "2025-05-27 13:15:00", "y": -11.315628142618591}, {"x": "2025-05-27 13:30:00", "y": -4.850095325997937}, {"x": "2025-05-27 13:45:00", "y": 0.0}, {"x": "2025-05-27 14:00:00", "y": -2.7374078591126474}, {"x": "2025-05-27 14:15:00", "y": 0.0}, {"x": "2025-05-27 14:30:00", "y": 0.0}, {"x": "2025-05-27 14:45:00", "y": 0.0}, {"x": "2025-05-27 15:00:00", "y": -2.7129954552782953}, {"x": "2025-05-27 15:15:00", "y": -1.6307092539776664}, {"x": "2025-05-27 15:30:00", "y": -1.7714549931602412}, {"x": "2025-05-27 15:45:00", "y": -4.280611791691285}, {"x": "2025-05-27 16:00:00", "y": -5.479891675362197}, {"x": "2025-05-27 16:15:00", "y": 0.0}, {"x": "2025-05-27 16:30:00", "y": 0.0}, {"x": "2025-05-27 16:45:00", "y": -4.966940889922564}, {"x": "2025-05-27 17:00:00", "y": -2.3241873360251932}, {"x": "2025-05-27 17:15:00", "y": 0.0}, {"x": "2025-05-27 17:30:00", "y": -1.371927653451989}, {"x": "2025-05-27 17:45:00", "y": -1.5423263110462717}, {"x": "2025-05-27 18:00:00", "y": -6.878626794590524}, {"x": "2025-05-27 18:15:00", "y": -6.878626794590524}, {"x": "2025-05-27 18:30:00", "y": -6.878626794590524}, {"x": "2025-05-27 18:45:00", "y": -6.878626794590524}, {"x": "2025-05-27 19:00:00", "y": -6.878626794590524}, {"x": "2025-05-27 19:15:00", "y": -6.878626794590524}, {"x": "2025-05-27 19:30:00", "y": -6.878626794590524}, {"x": "2025-05-27 19:45:00", "y": -6.878626794590524}, {"x": "2025-05-27 20:00:00", "y": -5.340735430496238}, {"x": "2025-05-27 20:15:00", "y": -4.836943431913577}, {"x": "2025-05-27 20:30:00", "y": -6.622311567241436}, {"x": "2025-05-27 20:45:00", "y": -5.985942726926589}, {"x": "2025-05-27 21:00:00", "y": -3.78074792611319}, {"x": "2025-05-27 21:15:00", "y": -10.64380909978682}, {"x": "2025-05-27 21:30:00", "y": -10.379864811734153}, {"x": "2025-05-27 21:45:00", "y": -10.379864811734153}, {"x": "2025-05-27 22:00:00", "y": -10.379864811734153}, {"x": "2025-05-27 22:15:00", "y": -10.379864811734153}, {"x": "2025-05-27 22:30:00", "y": -10.379864811734153}, {"x": "2025-05-27 22:45:00", "y": -10.379864811734153}, {"x": "2025-05-27 23:00:00", "y": -10.379864811734153}, {"x": "2025-05-27 23:15:00", "y": -7.482467502013076}, {"x": "2025-05-27 23:30:00", "y": -9.593301431641175}, {"x": "2025-05-27 23:45:00", "y": -10.086569992038422}, {"x": "2025-05-28 00:00:00", "y": -5.2294300234416715}, {"x": "2025-05-28 00:15:00", "y": -0.34006226590182076}, {"x": "2025-05-28 00:30:00", "y": 0.0}, {"x": "2025-05-28 00:45:00", "y": 0.0}, {"x": "2025-05-28 01:00:00", "y": -2.4581018928299296}, {"x": "2025-05-28 01:15:00", "y": -3.6766120935638544}, {"x": "2025-05-28 01:30:00", "y": -3.815749936554243}, {"x": "2025-05-28 01:45:00", "y": -9.739649009326303}, {"x": "2025-05-28 02:00:00", "y": -9.89177024013026}, {"x": "2025-05-28 02:15:00", "y": -9.89177024013026}, {"x": "2025-05-28 02:30:00", "y": -9.89177024013026}, {"x": "2025-05-28 02:45:00", "y": -9.89177024013026}, {"x": "2025-05-28 03:00:00", "y": -9.89177024013026}, {"x": "2025-05-28 03:15:00", "y": -9.89177024013026}, {"x": "2025-05-28 03:30:00", "y": -9.89177024013026}, {"x": "2025-05-28 03:45:00", "y": -9.89177024013026}, {"x": "2025-05-28 04:00:00", "y": -9.89177024013026}, {"x": "2025-05-28 04:15:00", "y": -9.89177024013026}, {"x": "2025-05-28 04:30:00", "y": -9.89177024013026}, {"x": "2025-05-28 04:45:00", "y": -9.89177024013026}, {"x": "2025-05-28 05:00:00", "y": -9.89177024013026}, {"x": "2025-05-28 05:15:00", "y": -9.89177024013026}, {"x": "2025-05-28 05:30:00", "y": -9.89177024013026}, {"x": "2025-05-28 05:45:00", "y": -9.026570501640656}, {"x": "2025-05-28 06:00:00", "y": -5.0265891019568}, {"x": "2025-05-28 06:15:00", "y": -5.712061358537954}, {"x": "2025-05-28 06:30:00", "y": -2.259621822342687}, {"x": "2025-05-28 06:45:00", "y": -1.7037205410908924}, {"x": "2025-05-28 07:00:00", "y": -3.3129084605039356}, {"x": "2025-05-28 07:15:00", "y": -2.782085432541747}, {"x": "2025-05-28 07:30:00", "y": -0.8719625424699488}, {"x": "2025-05-28 07:45:00", "y": -3.664725457441705}, {"x": "2025-05-28 08:00:00", "y": -6.0724256068644085}, {"x": "2025-05-28 08:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 08:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 08:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 09:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 09:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 09:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 09:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 10:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 10:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 10:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 10:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 11:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 11:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 11:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 11:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 12:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 12:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 12:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 12:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 13:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 13:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 13:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 13:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 14:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 14:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 14:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 14:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 15:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 15:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 15:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 15:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 16:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 16:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 16:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 16:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 17:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 17:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 17:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 17:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 18:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 18:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 18:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 18:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 19:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 19:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 19:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 19:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 20:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 20:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 20:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 20:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 21:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 21:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 21:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 21:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 22:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 22:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 22:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 22:45:00", "y": -6.463899032741013}, {"x": "2025-05-28 23:00:00", "y": -6.463899032741013}, {"x": "2025-05-28 23:15:00", "y": -6.463899032741013}, {"x": "2025-05-28 23:30:00", "y": -6.463899032741013}, {"x": "2025-05-28 23:45:00", "y": -6.463899032741013}, {"x": "2025-05-29 00:00:00", "y": -6.463899032741013}, {"x": "2025-05-29 00:15:00", "y": -6.463899032741013}, {"x": "2025-05-29 00:30:00", "y": -6.463899032741013}, {"x": "2025-05-29 00:45:00", "y": -6.463899032741013}, {"x": "2025-05-29 01:00:00", "y": -6.463899032741013}, {"x": "2025-05-29 01:15:00", "y": -6.463899032741013}, {"x": "2025-05-29 01:30:00", "y": -6.463899032741013}, {"x": "2025-05-29 01:45:00", "y": -6.463899032741013}, {"x": "2025-05-29 02:00:00", "y": -6.463899032741013}, {"x": "2025-05-29 02:15:00", "y": -6.463899032741013}, {"x": "2025-05-29 02:30:00", "y": -6.463899032741013}, {"x": "2025-05-29 02:45:00", "y": -6.463899032741013}, {"x": "2025-05-29 03:00:00", "y": -6.463899032741013}, {"x": "2025-05-29 03:15:00", "y": -6.463899032741013}, {"x": "2025-05-29 03:30:00", "y": 0.0}, {"x": "2025-05-29 03:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 04:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 04:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 04:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 04:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 05:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 05:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 05:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 05:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 06:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 06:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 06:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 06:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 07:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 07:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 07:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 07:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 08:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 08:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 08:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 08:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 09:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 09:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 09:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 09:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 10:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 10:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 10:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 10:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 11:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 11:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 11:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 11:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 12:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 12:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 12:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 12:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 13:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 13:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 13:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 13:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 14:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 14:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 14:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 14:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 15:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 15:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 15:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 15:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 16:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 16:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 16:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 16:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 17:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 17:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 17:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 17:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 18:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 18:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 18:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 18:45:00", "y": -8.77786101069153}, {"x": "2025-05-29 19:00:00", "y": -8.77786101069153}, {"x": "2025-05-29 19:15:00", "y": -8.77786101069153}, {"x": "2025-05-29 19:30:00", "y": -8.77786101069153}, {"x": "2025-05-29 19:45:00", "y": -5.9081002240845155}, {"x": "2025-05-29 20:00:00", "y": -4.374479891563922}, {"x": "2025-05-29 20:15:00", "y": -3.6601909695680375}, {"x": "2025-05-29 20:30:00", "y": -6.836675822679206}, {"x": "2025-05-29 20:45:00", "y": -3.82825895121414}, {"x": "2025-05-29 21:00:00", "y": -1.3366511233108722}, {"x": "2025-05-29 21:15:00", "y": -2.7148085728088454}, {"x": "2025-05-29 21:30:00", "y": -0.07614126096522514}, {"x": "2025-05-29 21:45:00", "y": 0.0}, {"x": "2025-05-29 22:00:00", "y": -1.8003987076058783}, {"x": "2025-05-29 22:15:00", "y": -3.2979653745314566}, {"x": "2025-05-29 22:30:00", "y": -4.14838411890747}, {"x": "2025-05-29 22:45:00", "y": -6.176943953053259}, {"x": "2025-05-29 23:00:00", "y": -5.824331302946119}, {"x": "2025-05-29 23:15:00", "y": -11.01395983569941}, {"x": "2025-05-29 23:30:00", "y": -11.273883756643107}, {"x": "2025-05-29 23:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 00:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 00:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 00:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 00:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 01:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 01:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 01:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 01:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 02:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 02:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 02:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 02:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 03:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 03:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 03:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 03:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 04:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 04:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 04:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 04:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 05:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 05:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 05:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 05:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 06:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 06:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 06:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 06:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 07:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 07:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 07:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 07:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 08:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 08:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 08:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 08:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 09:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 09:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 09:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 09:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 10:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 10:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 10:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 10:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 11:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 11:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 11:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 11:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 12:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 12:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 12:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 12:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 13:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 13:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 13:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 13:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 14:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 14:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 14:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 14:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 15:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 15:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 15:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 15:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 16:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 16:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 16:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 16:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 17:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 17:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 17:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 17:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 18:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 18:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 18:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 18:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 19:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 19:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 19:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 19:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 20:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 20:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 20:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 20:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 21:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 21:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 21:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 21:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 22:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 22:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 22:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 22:45:00", "y": -11.273883756643107}, {"x": "2025-05-30 23:00:00", "y": -11.273883756643107}, {"x": "2025-05-30 23:15:00", "y": -11.273883756643107}, {"x": "2025-05-30 23:30:00", "y": -11.273883756643107}, {"x": "2025-05-30 23:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 00:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 00:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 00:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 00:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 01:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 01:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 01:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 01:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 02:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 02:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 02:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 02:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 03:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 03:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 03:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 03:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 04:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 04:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 04:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 04:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 05:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 05:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 05:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 05:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 06:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 06:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 06:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 06:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 07:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 07:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 07:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 07:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 08:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 08:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 08:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 08:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 09:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 09:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 09:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 09:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 10:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 10:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 10:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 10:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 11:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 11:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 11:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 11:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 12:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 12:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 12:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 12:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 13:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 13:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 13:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 13:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 14:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 14:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 14:30:00", "y": -11.273883756643107}, {"x": "2025-05-31 14:45:00", "y": -11.273883756643107}, {"x": "2025-05-31 15:00:00", "y": -11.273883756643107}, {"x": "2025-05-31 15:15:00", "y": -11.273883756643107}, {"x": "2025-05-31 15:30:00", "y": -4.5951887567965}, {"x": "2025-05-31 15:45:00", "y": -14.473373406165226}, {"x": "2025-05-31 16:00:00", "y": -14.473373406165226}, {"x": "2025-05-31 16:15:00", "y": -14.473373406165226}, {"x": "2025-05-31 16:30:00", "y": -14.473373406165226}, {"x": "2025-05-31 16:45:00", "y": -14.473373406165226}, {"x": "2025-05-31 17:00:00", "y": -14.473373406165226}, {"x": "2025-05-31 17:15:00", "y": -14.473373406165226}, {"x": "2025-05-31 17:30:00", "y": -14.473373406165226}, {"x": "2025-05-31 17:45:00", "y": -14.473373406165226}, {"x": "2025-05-31 18:00:00", "y": -14.473373406165226}, {"x": "2025-05-31 18:15:00", "y": -14.473373406165226}, {"x": "2025-05-31 18:30:00", "y": -14.473373406165226}, {"x": "2025-05-31 18:45:00", "y": -14.473373406165226}, {"x": "2025-05-31 19:00:00", "y": -14.473373406165226}, {"x": "2025-05-31 19:15:00", "y": -14.473373406165226}, {"x": "2025-05-31 19:30:00", "y": -14.473373406165226}, {"x": "2025-05-31 19:45:00", "y": -14.473373406165226}, {"x": "2025-05-31 20:00:00", "y": -14.473373406165226}, {"x": "2025-05-31 20:15:00", "y": -14.473373406165226}, {"x": "2025-05-31 20:30:00", "y": -14.473373406165226}, {"x": "2025-05-31 20:45:00", "y": -14.473373406165226}, {"x": "2025-05-31 21:00:00", "y": -14.473373406165226}, {"x": "2025-05-31 21:15:00", "y": -14.473373406165226}, {"x": "2025-05-31 21:30:00", "y": -14.473373406165226}, {"x": "2025-05-31 21:45:00", "y": -14.473373406165226}, {"x": "2025-05-31 22:00:00", "y": -14.473373406165226}, {"x": "2025-05-31 22:15:00", "y": -14.473373406165226}, {"x": "2025-05-31 22:30:00", "y": -14.473373406165226}, {"x": "2025-05-31 22:45:00", "y": -14.473373406165226}, {"x": "2025-05-31 23:00:00", "y": -14.473373406165226}, {"x": "2025-05-31 23:15:00", "y": -14.473373406165226}, {"x": "2025-05-31 23:30:00", "y": -14.473373406165226}, {"x": "2025-05-31 23:45:00", "y": -14.473373406165226}, {"x": "2025-06-01 00:00:00", "y": -14.473373406165226}, {"x": "2025-06-01 00:15:00", "y": -14.473373406165226}, {"x": "2025-06-01 00:30:00", "y": -14.473373406165226}, {"x": "2025-06-01 00:45:00", "y": -14.473373406165226}, {"x": "2025-06-01 01:00:00", "y": -14.473373406165226}, {"x": "2025-06-01 01:15:00", "y": -14.473373406165226}, {"x": "2025-06-01 01:30:00", "y": -14.473373406165226}, {"x": "2025-06-01 01:45:00", "y": -14.473373406165226}, {"x": "2025-06-01 02:00:00", "y": -14.473373406165226}, {"x": "2025-06-01 02:15:00", "y": -8.904770827466022}, {"x": "2025-06-01 02:30:00", "y": -7.20654450913927}, {"x": "2025-06-01 02:45:00", "y": -8.11983482568124}, {"x": "2025-06-01 03:00:00", "y": -11.615021550609523}, {"x": "2025-06-01 03:15:00", "y": -11.19540167544158}, {"x": "2025-06-01 03:30:00", "y": -9.324390702633954}, {"x": "2025-06-01 03:45:00", "y": -8.341986524299546}, {"x": "2025-06-01 04:00:00", "y": -8.90970753187969}, {"x": "2025-06-01 04:15:00", "y": -6.164899877840009}, {"x": "2025-06-01 04:30:00", "y": -1.4651572759591815}, {"x": "2025-06-01 04:45:00", "y": -1.1936385332034412}, {"x": "2025-06-01 05:00:00", "y": 0.0}, {"x": "2025-06-01 05:15:00", "y": -2.1892106310832347}, {"x": "2025-06-01 05:30:00", "y": -2.689882120703204}, {"x": "2025-06-01 05:45:00", "y": -3.867932684514816}, {"x": "2025-06-01 06:00:00", "y": -6.076777491661621}, {"x": "2025-06-01 06:15:00", "y": -6.916138518377411}, {"x": "2025-06-01 06:30:00", "y": -6.813059094043836}, {"x": "2025-06-01 06:45:00", "y": -8.383793179126021}, {"x": "2025-06-01 07:00:00", "y": -9.458764318604153}, {"x": "2025-06-01 07:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 07:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 07:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 08:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 08:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 08:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 08:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 09:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 09:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 09:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 09:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 10:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 10:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 10:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 10:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 11:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 11:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 11:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 11:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 12:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 12:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 12:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 12:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 13:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 13:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 13:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 13:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 14:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 14:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 14:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 14:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 15:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 15:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 15:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 15:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 16:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 16:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 16:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 16:45:00", "y": -10.275483867955979}, {"x": "2025-06-01 17:00:00", "y": -10.275483867955979}, {"x": "2025-06-01 17:15:00", "y": -10.275483867955979}, {"x": "2025-06-01 17:30:00", "y": -10.275483867955979}, {"x": "2025-06-01 17:45:00", "y": -8.57884404679076}, {"x": "2025-06-01 18:00:00", "y": -4.969372072677412}, {"x": "2025-06-01 18:15:00", "y": 0.0}, {"x": "2025-06-01 18:30:00", "y": 0.0}, {"x": "2025-06-01 18:45:00", "y": -5.909470156261874}, {"x": "2025-06-01 19:00:00", "y": -5.207007136201062}, {"x": "2025-06-01 19:15:00", "y": -2.592542349451108}, {"x": "2025-06-01 19:30:00", "y": -3.4400648090515737}, {"x": "2025-06-01 19:45:00", "y": -2.099275309471966}, {"x": "2025-06-01 20:00:00", "y": -4.301040006106119}, {"x": "2025-06-01 20:15:00", "y": -2.5207944163632257}, {"x": "2025-06-01 20:30:00", "y": 0.0}, {"x": "2025-06-01 20:45:00", "y": -4.003862550028392}, {"x": "2025-06-01 21:00:00", "y": -3.0360414700546188}, {"x": "2025-06-01 21:15:00", "y": -0.9810789029870756}, {"x": "2025-06-01 21:30:00", "y": -1.6881627970318656}, {"x": "2025-06-01 21:45:00", "y": 0.0}, {"x": "2025-06-01 22:00:00", "y": 0.0}, {"x": "2025-06-01 22:15:00", "y": 0.0}, {"x": "2025-06-01 22:30:00", "y": 0.0}, {"x": "2025-06-01 22:45:00", "y": 0.0}, {"x": "2025-06-01 23:00:00", "y": -2.3983338394500495}, {"x": "2025-06-01 23:15:00", "y": -0.03192457689784821}, {"x": "2025-06-01 23:30:00", "y": 0.0}, {"x": "2025-06-01 23:45:00", "y": 0.0}, {"x": "2025-06-02 00:00:00", "y": 0.0}, {"x": "2025-06-02 00:15:00", "y": 0.0}, {"x": "2025-06-02 00:30:00", "y": -1.9762193528956324}, {"x": "2025-06-02 00:45:00", "y": -1.2575941336608616}, {"x": "2025-06-02 01:00:00", "y": 0.0}, {"x": "2025-06-02 01:15:00", "y": -3.5409206382447116}, {"x": "2025-06-02 01:30:00", "y": -5.421323889389677}, {"x": "2025-06-02 01:45:00", "y": -6.50937980285462}, {"x": "2025-06-02 02:00:00", "y": -6.401211122286739}, {"x": "2025-06-02 02:15:00", "y": -6.401211122286739}, {"x": "2025-06-02 02:30:00", "y": -6.401211122286739}, {"x": "2025-06-02 02:45:00", "y": -6.401211122286739}, {"x": "2025-06-02 03:00:00", "y": -6.401211122286739}, {"x": "2025-06-02 03:15:00", "y": -6.401211122286739}, {"x": "2025-06-02 03:30:00", "y": -6.401211122286739}, {"x": "2025-06-02 03:45:00", "y": -6.401211122286739}, {"x": "2025-06-02 04:00:00", "y": -6.401211122286739}, {"x": "2025-06-02 04:15:00", "y": -6.401211122286739}, {"x": "2025-06-02 04:30:00", "y": -6.401211122286739}, {"x": "2025-06-02 04:45:00", "y": -6.401211122286739}, {"x": "2025-06-02 05:00:00", "y": -6.401211122286739}, {"x": "2025-06-02 05:15:00", "y": -6.401211122286739}, {"x": "2025-06-02 05:30:00", "y": -6.401211122286739}, {"x": "2025-06-02 05:45:00", "y": -6.401211122286739}, {"x": "2025-06-02 06:00:00", "y": -6.401211122286739}, {"x": "2025-06-02 06:15:00", "y": -6.401211122286739}, {"x": "2025-06-02 06:30:00", "y": -6.401211122286739}, {"x": "2025-06-02 06:45:00", "y": -6.401211122286739}, {"x": "2025-06-02 07:00:00", "y": -6.401211122286739}, {"x": "2025-06-02 07:15:00", "y": -6.401211122286739}, {"x": "2025-06-02 07:30:00", "y": -6.401211122286739}, {"x": "2025-06-02 07:45:00", "y": -6.401211122286739}, {"x": "2025-06-02 08:00:00", "y": -6.401211122286739}, {"x": "2025-06-02 08:15:00", "y": -6.401211122286739}, {"x": "2025-06-02 08:30:00", "y": -1.9917965882575415}, {"x": "2025-06-02 08:45:00", "y": -0.5093210121615489}, {"x": "2025-06-02 09:00:00", "y": 0.0}, {"x": "2025-06-02 09:15:00", "y": -0.30348610914214935}, {"x": "2025-06-02 09:30:00", "y": 0.0}, {"x": "2025-06-02 09:45:00", "y": 0.0}, {"x": "2025-06-02 10:00:00", "y": 0.0}, {"x": "2025-06-02 10:15:00", "y": -2.6456143111558825}, {"x": "2025-06-02 10:30:00", "y": -2.30530707611093}, {"x": "2025-06-02 10:45:00", "y": -1.0099440523914438}, {"x": "2025-06-02 11:00:00", "y": -0.6659775997653481}, {"x": "2025-06-02 11:15:00", "y": -2.2943294233675795}, {"x": "2025-06-02 11:30:00", "y": -3.198156165906315}, {"x": "2025-06-02 11:45:00", "y": -0.6549999470220137}, {"x": "2025-06-02 12:00:00", "y": -4.8379125509696825}, {"x": "2025-06-02 12:15:00", "y": -4.8379125509696825}, {"x": "2025-06-02 12:30:00", "y": -4.8379125509696825}, {"x": "2025-06-02 12:45:00", "y": -4.8379125509696825}, {"x": "2025-06-02 13:00:00", "y": -4.8379125509696825}, {"x": "2025-06-02 13:15:00", "y": -4.8379125509696825}, {"x": "2025-06-02 13:30:00", "y": -4.8379125509696825}, {"x": "2025-06-02 13:45:00", "y": -1.4914207566611568}, {"x": "2025-06-02 14:00:00", "y": -1.7646037602781641}, {"x": "2025-06-02 14:15:00", "y": -5.840781735300617}, {"x": "2025-06-02 14:30:00", "y": -6.9670912957922315}, {"x": "2025-06-02 14:45:00", "y": -6.9670912957922315}, {"x": "2025-06-02 15:00:00", "y": -6.9670912957922315}, {"x": "2025-06-02 15:15:00", "y": -6.9670912957922315}, {"x": "2025-06-02 15:30:00", "y": -6.9670912957922315}, {"x": "2025-06-02 15:45:00", "y": -6.9670912957922315}, {"x": "2025-06-02 16:00:00", "y": -6.9670912957922315}, {"x": "2025-06-02 16:15:00", "y": -6.9670912957922315}, {"x": "2025-06-02 16:30:00", "y": -6.9670912957922315}];
+        const profitDistribution = [-4.249999999999931, -3.0691059867607984, 9.966131174498736, 14.638944999134313, -4.24999999999991, -4.250000000000013, 5.75188797307211, 1.7130273645732315, 8.672382554678325, -4.2499999999999645, -1.0371144798745315, -1.7779839094816408, -4.249999999999968, 6.259974119313514, 15.196944328170737, 15.558144506199135, 11.065121301923693, -4.249999999999995, 17.083120204603578, -4.250000000000014, -3.8096936850409913];
+        const tradeDetails = [{"id": 2, "type": "stop_loss", "direction": "short", "entry_time": "2025-05-26 18:30:00", "exit_time": "2025-05-26 19:15:00", "entry_price": 1.37164e-05, "exit_price": 1.3784981999999998e-05, "profit": -4.249999999999931, "profit_percent": -14.166666666666435, "duration_hours": 0.75}, {"id": 4, "type": "trailing_stop", "direction": "long", "entry_time": "2025-05-26 23:15:00", "exit_time": "2025-05-27 00:45:00", "entry_price": 1.3747e-05, "exit_price": 1.369991e-05, "profit": -3.0691059867607984, "profit_percent": -10.230353289202661, "duration_hours": 1.5}, {"id": 6, "type": "trailing_stop", "direction": "short", "entry_time": "2025-05-27 13:15:00", "exit_time": "2025-05-27 15:45:00", "entry_price": 1.42299e-05, "exit_price": 1.4031324000000001e-05, "profit": 9.966131174498736, "profit_percent": 33.22043724832912, "duration_hours": 2.5}, {"id": 8, "type": "close_long", "direction": "long", "entry_time": "2025-05-27 16:00:00", "exit_time": "2025-05-27 17:00:00", "entry_price": 1.38616e-05, "exit_price": 1.41414e-05, "profit": 14.638944999134313, "profit_percent": 48.79648333044771, "duration_hours": 1.0}, {"id": 10, "type": "stop_loss", "direction": "short", "entry_time": "2025-05-27 17:00:00", "exit_time": "2025-05-27 17:45:00", "entry_price": 1.41414e-05, "exit_price": 1.4212106999999998e-05, "profit": -4.24999999999991, "profit_percent": -14.166666666666366, "duration_hours": 0.75}, {"id": 12, "type": "stop_loss", "direction": "long", "entry_time": "2025-05-27 19:45:00", "exit_time": "2025-05-27 21:15:00", "entry_price": 1.39813e-05, "exit_price": 1.39113935e-05, "profit": -4.250000000000013, "profit_percent": -14.16666666666671, "duration_hours": 1.5}, {"id": 14, "type": "close_short", "direction": "short", "entry_time": "2025-05-27 23:00:00", "exit_time": "2025-05-28 00:00:00", "entry_price": 1.39038e-05, "exit_price": 1.37879e-05, "profit": 5.75188797307211, "profit_percent": 19.172959910240365, "duration_hours": 1.0}, {"id": 16, "type": "trailing_stop", "direction": "long", "entry_time": "2025-05-28 00:00:00", "exit_time": "2025-05-28 01:45:00", "entry_price": 1.37879e-05, "exit_price": 1.3828584e-05, "profit": 1.7130273645732315, "profit_percent": 5.710091215244105, "duration_hours": 1.75}, {"id": 18, "type": "close_short", "direction": "short", "entry_time": "2025-05-28 05:30:00", "exit_time": "2025-05-28 07:15:00", "entry_price": 1.39086e-05, "exit_price": 1.37385e-05, "profit": 8.672382554678325, "profit_percent": 28.90794184892775, "duration_hours": 1.75}, {"id": 20, "type": "stop_loss", "direction": "long", "entry_time": "2025-05-28 07:15:00", "exit_time": "2025-05-28 08:00:00", "entry_price": 1.37385e-05, "exit_price": 1.3669807500000001e-05, "profit": -4.2499999999999645, "profit_percent": -14.166666666666547, "duration_hours": 0.75}, {"id": 22, "type": "trailing_stop", "direction": "short", "entry_time": "2025-05-29 03:15:00", "exit_time": "2025-05-29 03:30:00", "entry_price": 1.49214e-05, "exit_price": 1.4932086e-05, "profit": -1.0371144798745315, "profit_percent": -3.4570482662484388, "duration_hours": 0.25}, {"id": 24, "type": "trailing_stop", "direction": "long", "entry_time": "2025-05-29 19:30:00", "exit_time": "2025-05-29 23:15:00", "entry_price": 1.36105e-05, "exit_price": 1.3587308e-05, "profit": -1.7779839094816408, "profit_percent": -5.926613031605469, "duration_hours": 3.75}, {"id": 26, "type": "stop_loss", "direction": "short", "entry_time": "2025-05-31 15:15:00", "exit_time": "2025-05-31 15:30:00", "entry_price": 1.17764e-05, "exit_price": 1.1835281999999999e-05, "profit": -4.249999999999968, "profit_percent": -14.166666666666561, "duration_hours": 0.25}, {"id": 28, "type": "trailing_stop", "direction": "long", "entry_time": "2025-06-01 02:00:00", "exit_time": "2025-06-01 07:00:00", "entry_price": 1.14371e-05, "exit_price": 1.1540186e-05, "profit": 6.259974119313514, "profit_percent": 20.866580397711715, "duration_hours": 5.0}, {"id": 30, "type": "close_short", "direction": "short", "entry_time": "2025-06-01 17:30:00", "exit_time": "2025-06-01 19:00:00", "entry_price": 1.1945e-05, "exit_price": 1.1695e-05, "profit": 15.196944328170737, "profit_percent": 50.656481093902464, "duration_hours": 1.5}, {"id": 32, "type": "close_long", "direction": "long", "entry_time": "2025-06-01 19:00:00", "exit_time": "2025-06-01 22:00:00", "entry_price": 1.1695e-05, "exit_price": 1.19454e-05, "profit": 15.558144506199135, "profit_percent": 51.86048168733045, "duration_hours": 3.0}, {"id": 34, "type": "close_short", "direction": "short", "entry_time": "2025-06-01 22:00:00", "exit_time": "2025-06-02 00:45:00", "entry_price": 1.19454e-05, "exit_price": 1.17612e-05, "profit": 11.065121301923693, "profit_percent": 36.883737673078976, "duration_hours": 2.75}, {"id": 36, "type": "stop_loss", "direction": "long", "entry_time": "2025-06-02 00:45:00", "exit_time": "2025-06-02 01:45:00", "entry_price": 1.17612e-05, "exit_price": 1.1702394e-05, "profit": -4.249999999999995, "profit_percent": -14.16666666666665, "duration_hours": 1.0}, {"id": 38, "type": "close_short", "direction": "short", "entry_time": "2025-06-02 08:15:00", "exit_time": "2025-06-02 09:45:00", "entry_price": 1.173e-05, "exit_price": 1.1455e-05, "profit": 17.083120204603578, "profit_percent": 56.94373401534526, "duration_hours": 1.5}, {"id": 40, "type": "stop_loss", "direction": "long", "entry_time": "2025-06-02 09:45:00", "exit_time": "2025-06-02 11:45:00", "entry_price": 1.1455e-05, "exit_price": 1.1397725e-05, "profit": -4.250000000000014, "profit_percent": -14.166666666666714, "duration_hours": 2.0}, {"id": 42, "type": "trailing_stop", "direction": "short", "entry_time": "2025-06-02 13:30:00", "exit_time": "2025-06-02 14:15:00", "entry_price": 1.16612e-05, "exit_price": 1.171266e-05, "profit": -3.8096936850409913, "profit_percent": -12.698978950136638, "duration_hours": 0.75}];
+        const heatmapData = [{"date": "2025-06", "value": 46.52}];
+        
+        // Configuration des graphiques
+        const config = {
+            responsive: true,
+            displayModeBar: true,
+            displaylogo: false,
+            modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+        };
+        
+        // Courbe d'équité
+        const equityTrace = {
+            x: equityData.map(d => d.x),
+            y: equityData.map(d => d.y),
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Balance',
+            line: {color: '#3498db', width: 2}
+        };
+        
+        Plotly.newPlot('equityCurve', [equityTrace], {
+            title: 'Évolution du Capital',
+            xaxis: {title: 'Date'},
+            yaxis: {title: 'Balance (USDT)'},
+            hovermode: 'x unified'
+        }, config);
+        
+        // Drawdown
+        const drawdownTrace = {
+            x: drawdownData.map(d => d.x),
+            y: drawdownData.map(d => d.y),
+            type: 'scatter',
+            mode: 'lines',
+            fill: 'tozeroy',
+            name: 'Drawdown',
+            line: {color: '#e74c3c'},
+            fillcolor: 'rgba(231, 76, 60, 0.3)'
+        };
+        
+        Plotly.newPlot('drawdownChart', [drawdownTrace], {
+            title: 'Drawdown',
+            xaxis: {title: 'Date'},
+            yaxis: {title: 'Drawdown (%)'},
+            hovermode: 'x unified'
+        }, config);
+        
+        // Distribution des profits
+        const profitHist = {
+            x: profitDistribution,
+            type: 'histogram',
+            name: 'Distribution',
+            marker: {
+                color: profitDistribution.map(v => v > 0 ? '#27ae60' : '#e74c3c')
+            },
+            nbinsx: 20
+        };
+        
+        Plotly.newPlot('profitDistribution', [profitHist], {
+            title: 'Distribution des Profits/Pertes',
+            xaxis: {title: 'Profit (USDT)'},
+            yaxis: {title: 'Fréquence'},
+            bargap: 0.1
+        }, config);
+        
+        // Répartition des types de trades
+        const tradeTypePie = {
+            values: [10, 11],
+            labels: ['Long', 'Short'],
+            type: 'pie',
+            marker: {
+                colors: ['#3498db', '#e67e22']
+            }
+        };
+        
+        Plotly.newPlot('tradeTypeDistribution', [tradeTypePie], {
+            title: 'Répartition Long/Short'
+        }, config);
+        
+        // Heatmap mensuelle (si données disponibles)
+        if (heatmapData.length > 0) {
+            const months = heatmapData.map(d => d.date);
+            const values = heatmapData.map(d => d.value);
+            
+            const heatmapTrace = {
+                z: [values],
+                x: months,
+                y: ['Performance'],
+                type: 'heatmap',
+                colorscale: [
+                    [0, '#e74c3c'],
+                    [0.5, '#ecf0f1'],
+                    [1, '#27ae60']
+                ],
+                zmid: 0
+            };
+            
+            Plotly.newPlot('monthlyHeatmap', [heatmapTrace], {
+                title: 'Performance Mensuelle (%)',
+                xaxis: {title: 'Mois'},
+                yaxis: {title: ''},
+                height: 200
+            }, config);
+        }
+        
+        // DataTable pour les trades
+        $(document).ready(function() {
+            const table = $('#tradesTable').DataTable({
+                data: tradeDetails,
+                columns: [
+                    { data: 'id' },
+                    { data: 'type' },
+                    { data: 'direction' },
+                    { data: 'entry_time' },
+                    { data: 'exit_time' },
+                    { data: 'entry_price', render: $.fn.dataTable.render.number(',', '.', 9) },
+                    { data: 'exit_price', render: $.fn.dataTable.render.number(',', '.', 9) },
+                    { 
+                        data: 'profit',
+                        render: function(data, type, row) {
+                            const color = data > 0 ? 'positive' : 'negative';
+                            return `<span class="${color}">${parseFloat(data).toFixed(2)}</span>`;
+                        }
+                    },
+                    { 
+                        data: 'profit_percent',
+                        render: function(data, type, row) {
+                            const color = data > 0 ? 'positive' : 'negative';
+                            return `<span class="${color}">${parseFloat(data).toFixed(2)}%</span>`;
+                        }
+                    },
+                    { data: 'duration_hours', render: $.fn.dataTable.render.number(',', '.', 2) }
+                ],
+                pageLength: 25,
+                order: [[0, 'desc']],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/fr-FR.json'
+                },
+                createdRow: function(row, data, dataIndex) {
+                    if (data.profit > 0) {
+                        $(row).addClass('trade-row-positive');
+                    } else {
+                        $(row).addClass('trade-row-negative');
+                    }
+                }
+            });
+        });
+        
+        // Fonction d'export CSV
+        function exportToCSV() {
+            let csv = 'ID,Type,Direction,Date Entrée,Date Sortie,Prix Entrée,Prix Sortie,Profit,Profit %,Durée\n';
+            tradeDetails.forEach(trade => {
+                csv += `${trade.id},${trade.type},${trade.direction},${trade.entry_time},${trade.exit_time},${trade.entry_price},${trade.exit_price},${trade.profit},${trade.profit_percent},${trade.duration_hours}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'trades_export.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const icon = document.querySelector('.fa-moon');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+        
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
