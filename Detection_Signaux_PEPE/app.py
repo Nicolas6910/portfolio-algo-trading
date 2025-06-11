@@ -8,8 +8,10 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from dash import dash_table
+import Keys  # Assurez-vous que ce fichier contient vos clés API : bit_key, bit_secret, bit_passw
 import dash_bootstrap_components as dbc
-import os
+
+from backtest_report_generator import generate_html_report, save_report
 
 # ========================
 # Configuration des Paramètres
@@ -50,9 +52,9 @@ TIMEFRAME_MAPPING = {
 # ========================
 exchange = ccxt.bitget({
     'enableRateLimit': True,
-    'apiKey': os.environ.get("BITGET_API_KEY"),
-    'secret': os.environ.get("BITGET_API_SECRET"),
-    'password': os.environ.get("BITGET_API_PASSWORD")
+    'apiKey': Keys.bit_key,
+    'secret': Keys.bit_secret,
+    'password': Keys.bit_passw
 })
 
 # ========================
@@ -506,12 +508,9 @@ def backtest_strategy(df, triangles):
     return trades, balance_over_time
 
 # ========================
-# Initialisation de l'application Dash
+# Initialisation de l'application Dash avec un thème Bootstrap
 # ========================
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
-# Pour Render/Gunicorn - IMPORTANT !
-server = app.server
 
 # ========================
 # Définition du layout de l'application
@@ -622,20 +621,86 @@ app.layout = html.Div([
     )
 ], style={'padding': '10px'})
 
+
 # ========================
-# Callbacks
+# Callback pour Générer et Télécharger le Rapport
 # ========================
+@app.callback(
+    Output("download-report", "data"),
+    Input("generate-report-btn", "n_clicks"),
+    [
+        State('days-dropdown', 'value'),
+        State('timeframe-dropdown', 'value'),
+    ],
+    prevent_initial_call=True
+)
+def generate_and_download_report(n_clicks, selected_days, selected_timeframe):
+    if not n_clicks:
+        return None
+
+    try:
+        # Calcul du nombre total de bougies à récupérer
+        timeframe_in_minutes = TIMEFRAME_MAPPING.get(selected_timeframe, 15)
+        total_bougies = selected_days * 24 * (60 // timeframe_in_minutes)
+        total_limit = total_bougies
+
+        utc_now = datetime.now(timezone.utc)
+        start_time = utc_now - timedelta(days=selected_days)
+        since = int(start_time.timestamp() * 1000)
+        until = int(utc_now.timestamp() * 1000)
+
+        # Récupération des données
+        df = fetch_all_data(symbol, selected_timeframe, since=since, until=until, total_limit=total_limit, batch_limit=1000)
+        if df.empty:
+            return None
+
+        # Calcul des indicateurs
+        ema_lengths = list(range(5, 205, 5))
+        df = calculate_ema(df, ema_lengths)
+        df = calculate_sum_of_gaps(df)
+        df = calculate_average_slope(df, ema_lengths)
+        df.fillna(0, inplace=True)
+
+        # Détection des triangles
+        triangles = detect_triangles(df)
+
+        # Exécution du backtest
+        trades, balance_over_time = backtest_strategy(df, triangles)
+
+        # Génération du rapport HTML
+        html_content = generate_html_report(
+            df=df,
+            trades=trades,
+            balance_over_time=balance_over_time,
+            triangles=triangles,
+            symbol=symbol,
+            timeframe=selected_timeframe,
+            initial_balance=100
+        )
+
+        # Sauvegarder temporairement le rapport
+        filename = f"backtest_report_{symbol.replace('/', '_')}_{selected_timeframe}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+        save_report(html_content, filename)
+
+        # Retourner le fichier pour téléchargement
+        return dcc.send_file(filename)
+
+    except Exception as e:
+        print(f"Erreur lors de la génération du rapport : {e}")
+        return None
+
 
 # Callback pour afficher l'indicateur de chargement
 @app.callback(
     Output("loading-output", "children"),
     Input("generate-report-btn", "n_clicks"),
-    prevent_initial_call=True   
+    prevent_initial_call=True
 )
 def display_loading(n_clicks):
     if n_clicks:
         return "Génération du rapport en cours..."
     return ""
+
 
 # ========================
 # Callback pour Capturer les Changements de Zoom et Mettre à Jour le Store
@@ -905,4 +970,6 @@ def update_graph(n, store_data, selected_days, selected_timeframe):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    print("Démarrage de l'application...")
+    print("Veuillez ouvrir votre navigateur à l'adresse : http://127.0.0.1:8050/")
+    app.run(debug=True, threaded=False)
