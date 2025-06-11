@@ -10,6 +10,20 @@ from dash.dependencies import Input, Output, State
 from dash import dash_table
 import dash_bootstrap_components as dbc
 import os
+import dash
+from dash import html
+
+# Obligatoire : ceci est ce que Render va chercher à exécuter
+app = dash.Dash(__name__)
+
+app.layout = html.Div([
+    html.H1("Dashboard PEPE"),
+    html.P("Bienvenue sur mon application Dash déployée avec Render.")
+])
+
+if __name__ == "__main__":
+    app.run_server(debug=True)
+
 
 
 # ========================
