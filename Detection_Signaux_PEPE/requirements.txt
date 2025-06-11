@@ -1,6 +1,7 @@
 dash
 dash-bootstrap-components
+plotly
 pandas
 numpy
-plotly
 ccxt
+gunicorn
