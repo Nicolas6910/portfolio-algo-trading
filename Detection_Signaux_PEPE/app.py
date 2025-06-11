@@ -8,7 +8,6 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from dash import dash_table
-import Keys  # Assurez-vous que ce fichier contient vos clés API : bit_key, bit_secret, bit_passw
 import dash_bootstrap_components as dbc
 
 from backtest_report_generator import generate_html_report, save_report
@@ -52,9 +51,9 @@ TIMEFRAME_MAPPING = {
 # ========================
 exchange = ccxt.bitget({
     'enableRateLimit': True,
-    'apiKey': Keys.bit_key,
-    'secret': Keys.bit_secret,
-    'password': Keys.bit_passw
+    'apiKey': os.environ.get("BITGET_API_KEY"),
+    'secret': os.environ.get("BITGET_API_SECRET"),
+    'password': os.environ.get("BITGET_API_PASSWORD")
 })
 
 # ========================
