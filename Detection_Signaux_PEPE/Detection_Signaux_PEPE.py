@@ -49,6 +49,12 @@ TIMEFRAME_MAPPING = {
 # ========================
 # Configuration de l'API Bitget via ccxt
 # ========================
+exchange = ccxt.bitget({
+    'enableRateLimit': True,
+    'apiKey': os.environ.get("BITGET_API_KEY"),
+    'secret': os.environ.get("BITGET_API_SECRET"),
+    'password': os.environ.get("BITGET_API_PASSWORD")
+})
 
 # ========================
 # Fonctions de Récupération et de Calcul
