@@ -63,7 +63,7 @@ exchange = ccxt.bitget(
 # Fonctions de Récupération et de Calcul
 # ========================
 
-def fetch_all_data(symbol, timeframe='15m', since=None, until=None, total_limit=672, batch_limit=1000):
+def fetch_all_data(symbol, timeframe='1H', since=None, until=None, total_limit=672, batch_limit=1000):
     """
     Récupère toutes les données OHLCV en plusieurs requêtes entre since et until.
     """
