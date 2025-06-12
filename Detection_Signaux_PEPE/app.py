@@ -34,9 +34,13 @@ TIMEFRAME_MAPPING = {"1m": 1, "5m": 5, "15m": 15, "30m": 30, "1h": 60, "4h": 240
 # -------------------------------------------------
 # Initialisation de l'API Bitget via ccxt
 # -------------------------------------------------
-bit_key = os.getenv("BITGET_API_KEY")
-bit_secret = os.getenv("BITGET_API_SECRET")
-bit_passw = os.getenv("BITGET_API_PASSWORD")
+# -------------------------------------------------
+# Initialisation de l'API Bitget via ccxt
+# -------------------------------------------------
+BITGET_API_KEY = os.getenv("BITGET_API_KEY")
+BITGET_API_SECRET = os.getenv("BITGET_API_SECRET")
+BITGET_API_PASSWORD = os.getenv("BITGET_API_PASSWORD")
+
 
 
 if not (BITGET_API_KEY and BITGET_API_SECRET and BITGET_API_PASSWORD):
@@ -507,6 +511,8 @@ def backtest_strategy(df, triangles):
 # Initialisation de l'application Dash avec un thème Bootstrap
 # ========================
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server   # <- indispensable pour 'gunicorn app:server'
+
 
 # ========================
 # Définition du layout de l'application
