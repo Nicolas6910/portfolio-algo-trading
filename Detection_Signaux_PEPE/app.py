@@ -26,6 +26,8 @@ DEFAULT_DISPLAY_PARAMS = {
 
 # Symbole pour PEPE/USDT perpétuel
 SYMBOL = "PEPE/USDT:USDT"
+symbol = SYMBOL          # évite NameError plus bas
+
 
 # Timeframes disponibles et leur durée en minutes
 AVAILABLE_TIMEFRAMES = ["1m", "5m", "15m", "30m", "1h", "4h", "1d"]
