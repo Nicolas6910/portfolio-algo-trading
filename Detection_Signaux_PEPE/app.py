@@ -620,7 +620,7 @@ app.layout = html.Div([
     # Interval pour les mises à jour
     dcc.Interval(
         id='interval-component',
-        interval=2 * 1000,  # Mise à jour toutes les 15 minutes (900000 ms)
+        interval=15 * 1000,  # Mise à jour toutes les 15 minutes (900000 ms)
         n_intervals=0
     )
 ], style={'padding': '10px'})
